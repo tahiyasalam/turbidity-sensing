@@ -56,6 +56,10 @@ package com.example.ti.ble.sensortag;
 
 import com.example.ti.ble.common.GenericBluetoothProfile;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -65,6 +69,8 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattService;
 import android.content.Context;
+import android.os.Environment;
+import android.util.Log;
 
 import com.example.ti.ble.common.BluetoothLeService;
 import com.example.ti.ble.common.GattInfo;
@@ -72,11 +78,13 @@ import com.example.ti.util.GenericCharacteristicTableRow;
 import com.example.ti.util.Point3D;
 
 public class SensorTagLuxometerProfile extends GenericBluetoothProfile {
-		public SensorTagLuxometerProfile(Context con,BluetoothDevice device,BluetoothGattService service,BluetoothLeService controller) {
+    BufferedWriter wr;
+
+    public SensorTagLuxometerProfile(Context con,BluetoothDevice device,BluetoothGattService service,BluetoothLeService controller, BufferedWriter writer) {
 			super(con,device,service,controller);
 			this.tRow =  new GenericCharacteristicTableRow(con);
-			
-			List<BluetoothGattCharacteristic> characteristics = this.mBTService.getCharacteristics();
+            wr = writer;
+            List<BluetoothGattCharacteristic> characteristics = this.mBTService.getCharacteristics();
 			
 			for (BluetoothGattCharacteristic c : characteristics) {
 				if (c.getUuid().toString().equals(SensorTagGatt.UUID_OPT_DATA.toString())) {
@@ -115,12 +123,30 @@ public class SensorTagLuxometerProfile extends GenericBluetoothProfile {
 					if (this.tRow.config == false) this.tRow.value.setText(String.format("%.1f Lux", v.x));
 					this.tRow.sl1.addValue((float)v.x);
 				}
-		}
+        try {
+            Long tsLong = System.currentTimeMillis()/1000;
+            String ts = tsLong.toString();
+		    wr.write(ts + "," + returnData());
+		    wr.newLine();
+		    wr.flush();
+	    }
+	    catch (IOException e) {
+		    e.printStackTrace();
+	    }
+    }
+
+    public double returnData() {
+        Point3D v = Sensor.LUXOMETER.convert(this.dataC.getValue());
+        if (this.tRow.config == false)
+            this.tRow.value.setText(String.format("%.1f Lux", v.x));
+        return (float) v.x;
+    }
+
     @Override
     public Map<String,String> getMQTTMap() {
         Point3D v = Sensor.LUXOMETER.convert(this.dataC.getValue());
         Map<String,String> map = new HashMap<String, String>();
-        map.put("light",String.format("%.2f",v.x));
+        map.put("light", String.format("%.2f", v.x));
         return map;
     }
 }

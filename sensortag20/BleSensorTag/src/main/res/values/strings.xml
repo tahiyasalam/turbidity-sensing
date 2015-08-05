@@ -2,7 +2,7 @@
 <resources>
 
     <!-- Main activity -->
-    <string name="app_name">BLE SensorTag</string>
+    <string name="app_name">SensorTag_Testing</string>
     <string name="button_scan">Scan</string>
     <string name="connect">Connect</string>
     <string name="title_device_list">Device List</string>

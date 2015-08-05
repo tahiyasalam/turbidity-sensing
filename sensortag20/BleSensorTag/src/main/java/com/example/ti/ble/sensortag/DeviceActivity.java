@@ -54,6 +54,9 @@
  **************************************************************************************************/
 package com.example.ti.ble.sensortag;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -79,6 +82,7 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.CountDownTimer;
+import android.os.Environment;
 import android.os.Looper;
 import android.preference.PreferenceManager;
 import android.util.Log;
@@ -134,6 +138,10 @@ import com.example.ti.ble.common.IBMIoTCloudProfile;
 	//GUI
 	private List<GenericBluetoothProfile> mProfiles;
 
+	TimeString timestring = new TimeString();
+	BufferedWriter loggerLux;
+	SensorTagLuxometerProfile lux;
+
 	public DeviceActivity() {
 		mResourceFragmentPager = R.layout.fragment_pager;
 		mResourceIdPager = R.id.pager;
@@ -149,6 +157,13 @@ import com.example.ti.ble.common.IBMIoTCloudProfile;
 		requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
 		super.onCreate(savedInstanceState);
 		Intent intent = getIntent();
+
+		String pathRoot = Environment.getExternalStorageDirectory() + "/sensor_tag/lightinfo_" + timestring.currentTimeForFile();
+		try {
+			loggerLux = new BufferedWriter(new FileWriter(pathRoot + ".csv"));
+		} catch(IOException e) {
+			e.printStackTrace();
+		}
 
 		// BLE
 		mBtLeService = BluetoothLeService.getInstance();
@@ -192,7 +207,14 @@ import com.example.ti.ble.common.IBMIoTCloudProfile;
 	@Override
 	public void onDestroy() {
 		super.onDestroy();
-        if (mqttProfile != null) {
+
+		try {
+			loggerLux.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+		if (mqttProfile != null) {
             mqttProfile.disconnect();
 
         }
@@ -489,7 +511,7 @@ import com.example.ti.ble.common.IBMIoTCloudProfile;
                                     Log.d("DeviceActivity","Found Humidity !");
                                 }
                                 if (SensorTagLuxometerProfile.isCorrectService(s)) {
-                                    SensorTagLuxometerProfile lux = new SensorTagLuxometerProfile(context,mBluetoothDevice,s,mBtLeService);
+									lux = new SensorTagLuxometerProfile(context,mBluetoothDevice,s,mBtLeService, loggerLux);
                                     mProfiles.add(lux);
                                     if (nrNotificationsOn < maxNotifications) {
                                         lux.configureService();
@@ -498,7 +520,7 @@ import com.example.ti.ble.common.IBMIoTCloudProfile;
                                     else {
                                         lux.grayOutCell(true);
                                     }
-                                }
+								}
                                 if (SensorTagSimpleKeysProfile.isCorrectService(s)) {
                                     SensorTagSimpleKeysProfile key = new SensorTagSimpleKeysProfile(context,mBluetoothDevice,s,mBtLeService);
                                     mProfiles.add(key);
@@ -625,6 +647,7 @@ import com.example.ti.ble.common.IBMIoTCloudProfile;
                     return;
                 }
 			} else if (BluetoothLeService.ACTION_DATA_NOTIFY.equals(action)) {
+
 				// Notification
 				byte[] value = intent.getByteArrayExtra(BluetoothLeService.EXTRA_DATA);
 				String uuidStr = intent.getStringExtra(BluetoothLeService.EXTRA_UUID);
@@ -745,4 +768,14 @@ import com.example.ti.ble.common.IBMIoTCloudProfile;
         }
 
     }
+
+//	Log.i("value", String.valueOf(lux.returnData()));
+//	try {
+//		loggerLux.write(timestring + "," + lux.returnData());
+//		loggerLux.newLine();
+//		loggerLux.flush();
+//	}
+//	catch (IOException e) {
+//		e.printStackTrace();
+//	}
 }

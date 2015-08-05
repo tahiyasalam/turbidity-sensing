@@ -54,7 +54,9 @@
  **************************************************************************************************/
 package com.example.ti.ble.sensortag;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -71,10 +73,13 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
+import android.hardware.*;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.preference.PreferenceManager;
 // import android.util.Log;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -89,6 +94,8 @@ import com.example.ti.ble.common.HelpView;
 import com.example.ti.util.CustomToast;
 
 public class MainActivity extends ViewPagerActivity {
+
+
 	// Log
 	// private static final String TAG = "MainActivity";
 
@@ -141,8 +148,6 @@ public class MainActivity extends ViewPagerActivity {
 
 		prefs = PreferenceManager.getDefaultSharedPreferences(this);
 
-
-
 		// Initialize device list container and device filter
 		mDeviceInfoList = new ArrayList<BleDeviceInfo>();
 		Resources res = getResources();
@@ -176,7 +181,7 @@ public class MainActivity extends ViewPagerActivity {
 		File cache = getCacheDir();
 		String path = cache.getPath();
     try {
-	    Runtime.getRuntime().exec(String.format("rm -rf %s", path));
+		Runtime.getRuntime().exec(String.format("rm -rf %s", path));
     } catch (IOException e) {
 	    // TODO Auto-generated catch block
 	    e.printStackTrace();
